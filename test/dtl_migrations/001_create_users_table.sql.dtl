@@ -1,0 +1,10 @@
+-- DTL миграция: создание таблицы users с префиксом realm
+CREATE TABLE {{ realm }}_users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_{{ realm }}_users_username ON {{ realm }}_users(username);
+CREATE INDEX idx_{{ realm }}_users_email ON {{ realm }}_users(email);

@@ -1,0 +1,11 @@
+-- DTL миграция: вставка тестовых данных в таблицы с префиксом realm
+INSERT INTO {{ realm }}_users (username, email) VALUES
+    ('alice_{{ realm }}', 'alice@{{ realm }}.com'),
+    ('bob_{{ realm }}', 'bob@{{ realm }}.com'),
+    ('charlie_{{ realm }}', 'charlie@{{ realm }}.com');
+
+INSERT INTO {{ realm }}_posts (user_id, title, content, published) VALUES
+    (1, 'First Post in {{ realm }}', 'This is Alice''s first post in {{ realm }}', true),
+    (1, 'Second Post in {{ realm }}', 'This is Alice''s second post in {{ realm }}', false),
+    (2, 'Bob''s Post in {{ realm }}', 'Hello from Bob in {{ realm }}', true),
+    (3, 'Charlie''s Thoughts in {{ realm }}', 'Some interesting thoughts in {{ realm }}', true);

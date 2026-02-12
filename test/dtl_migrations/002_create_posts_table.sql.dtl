@@ -1,0 +1,14 @@
+-- DTL миграция: создание таблицы posts с префиксом realm
+CREATE TABLE {{ realm }}_posts (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES {{ realm }}_users(id) ON DELETE CASCADE,
+    title VARCHAR(500) NOT NULL,
+    content TEXT,
+    published BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_{{ realm }}_posts_user_id ON {{ realm }}_posts(user_id);
+CREATE INDEX idx_{{ realm }}_posts_published ON {{ realm }}_posts(published);
+CREATE INDEX idx_{{ realm }}_posts_created_at ON {{ realm }}_posts(created_at);
