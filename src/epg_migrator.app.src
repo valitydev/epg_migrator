@@ -1,0 +1,16 @@
+{application, epg_migrator, [
+    {description, "An OTP application"},
+    {vsn, "0.1.0"},
+    {registered, []},
+    {mod, {epg_migrator_app, []}},
+    {applications, [
+        kernel,
+        stdlib,
+        erlydtl,
+        epgsql
+    ]},
+    {env, []},
+    {modules, []},
+    {licenses, ["MIT"]},
+    {links, []}
+ ]}.
