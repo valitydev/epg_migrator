@@ -1,6 +1,7 @@
 -module(epg_migrator_storage).
 
 -export([
+    advisory_lock/1,
     ensure_table/1,
     get_executed/2,
     save_migration/3
@@ -11,6 +12,19 @@
 %%%-----------------------------------------------------------------------------
 %%% API
 %%%-----------------------------------------------------------------------------
+
+-spec advisory_lock(epgsql:connection()) -> ok | no_return().
+advisory_lock(Conn) ->
+    AdLockSQL = "SELECT pg_try_advisory_xact_lock(123456);",
+    case epgsql:squery(Conn, AdLockSQL) of
+        {ok, _, [{<<"t">>}]} ->
+            %% success lock
+            ok;
+        {ok, _, [{<<"f">>}]} ->
+            %% already locked, wait unlock and retry
+            timer:sleep(1000),
+            advisory_lock(Conn)
+    end.
 
 -spec ensure_table(epgsql:connection()) -> ok | {error, term()}.
 ensure_table(Conn) ->

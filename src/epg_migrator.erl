@@ -26,6 +26,7 @@ perform(Realm, DbOpts, MigrationOpts, MigrationsDir) ->
     Result = epgsql:with_transaction(
         Conn,
         fun(C) ->
+            ok = epg_migrator_storage:advisory_lock(C),
             ok = epg_migrator_storage:ensure_table(C),
             {ok, ExecutedMigrations} = epg_migrator_storage:get_executed(C, Realm),
             PendingMigrations = epg_migrator_scanner:filter_pending(AllMigrations, ExecutedMigrations),

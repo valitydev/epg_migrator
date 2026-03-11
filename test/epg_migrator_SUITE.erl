@@ -23,7 +23,8 @@
     test_failed_migration_rolls_back/1,
     test_storage_ensure_table/1,
     test_scanner_scan_directory/1,
-    test_scanner_filter_pending/1
+    test_scanner_filter_pending/1,
+    test_parallel_migrations/1
 ]).
 
 %%%-----------------------------------------------------------------------------
@@ -41,7 +42,8 @@ all() ->
         test_migration_creates_correct_tables,
         test_migration_inserts_data,
         test_different_realms_are_independent,
-        test_failed_migration_rolls_back
+        test_failed_migration_rolls_back,
+        test_parallel_migrations
     ].
 
 init_per_suite(Config) ->
@@ -302,6 +304,38 @@ test_failed_migration_rolls_back(Config) ->
     after
         epgsql:close(Conn)
     end.
+
+test_parallel_migrations(Config) ->
+    DbOpts = ?config(db_opts, Config),
+    MigrationsDir = ?config(migrations_dir, Config),
+    Realm = "test_realm_6",
+    Pid = self(),
+    MigFun = fun() ->
+        {ok, Migrations} = epg_migrator:perform(Realm, DbOpts, [], MigrationsDir),
+        Pid ! Migrations
+    end,
+    Loop = fun F(Acc) ->
+        receive
+            Msg -> F([Msg | Acc])
+        after 2000 ->
+            Acc
+        end
+    end,
+    erlang:spawn(MigFun),
+    erlang:spawn(MigFun),
+    erlang:spawn(MigFun),
+    Result = Loop([]),
+    Expected = [
+        [],
+        [],
+        [
+            <<"001_create_users_table.sql">>,
+            <<"002_create_posts_table.sql">>,
+            <<"003_insert_test_data.sql">>
+        ]
+    ],
+    ?assertEqual(Expected, Result),
+    ok.
 
 %%%-----------------------------------------------------------------------------
 %%% Helper Functions
