@@ -1,7 +1,7 @@
 -module(epg_migrator_storage).
 
 -export([
-    advisory_lock/1,
+    advisory_lock/2,
     ensure_table/1,
     get_executed/2,
     save_migration/3
@@ -13,17 +13,18 @@
 %%% API
 %%%-----------------------------------------------------------------------------
 
--spec advisory_lock(epgsql:connection()) -> ok | no_return().
-advisory_lock(Conn) ->
-    AdLockSQL = "SELECT pg_try_advisory_xact_lock(123456);",
-    case epgsql:squery(Conn, AdLockSQL) of
-        {ok, _, [{<<"t">>}]} ->
+-spec advisory_lock(epgsql:connection(), string()) -> ok | no_return().
+advisory_lock(Conn, DbName) ->
+    Key = erlang:phash2(DbName),
+    AdLockSQL = "SELECT pg_try_advisory_xact_lock($1)",
+    case epgsql:equery(Conn, AdLockSQL, [Key]) of
+        {ok, _, [{V}]} when V =:= <<"t">>; V =:= true ->
             %% success lock
             ok;
-        {ok, _, [{<<"f">>}]} ->
+        {ok, _, [{V}]} when V =:= <<"f">>; V =:= false ->
             %% already locked, wait unlock and retry
             timer:sleep(1000),
-            advisory_lock(Conn)
+            advisory_lock(Conn, DbName)
     end.
 
 -spec ensure_table(epgsql:connection()) -> ok | {error, term()}.
