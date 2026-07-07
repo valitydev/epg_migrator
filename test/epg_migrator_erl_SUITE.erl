@@ -43,7 +43,7 @@ all() ->
     ].
 
 init_per_suite(Config) ->
-    application:ensure_all_started(epgsql),
+    {ok, _} = application:ensure_all_started(epgsql),
 
     DbOpts = #{
         host => "postgres",
@@ -153,7 +153,12 @@ test_erl_creates_correct_tables(Config) ->
     try
         {ok, _, UsersRows} = epgsql:equery(
             Conn,
-            "SELECT column_name FROM information_schema.columns WHERE table_name = 'test_users' ORDER BY ordinal_position",
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'test_users'
+            ORDER BY ordinal_position
+            """,
             []
         ),
         UserColumns = [Col || {Col} <- UsersRows],
@@ -164,7 +169,12 @@ test_erl_creates_correct_tables(Config) ->
 
         {ok, _, PostsRows} = epgsql:equery(
             Conn,
-            "SELECT column_name FROM information_schema.columns WHERE table_name = 'test_posts' ORDER BY ordinal_position",
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'test_posts'
+            ORDER BY ordinal_position
+            """,
             []
         ),
         PostColumns = [Col || {Col} <- PostsRows],
@@ -321,10 +331,10 @@ connect(DbOpts) ->
 cleanup_database(DbOpts) ->
     {ok, Conn} = connect(DbOpts),
     try
-        epgsql:squery(Conn, "DROP SCHEMA public CASCADE"),
-        epgsql:squery(Conn, "CREATE SCHEMA public"),
-        epgsql:squery(Conn, "GRANT ALL ON SCHEMA public TO migrator"),
-        epgsql:squery(Conn, "GRANT ALL ON SCHEMA public TO public"),
+        _ = epgsql:squery(Conn, "DROP SCHEMA public CASCADE"),
+        _ = epgsql:squery(Conn, "CREATE SCHEMA public"),
+        _ = epgsql:squery(Conn, "GRANT ALL ON SCHEMA public TO migrator"),
+        _ = epgsql:squery(Conn, "GRANT ALL ON SCHEMA public TO public"),
         ok
     after
         epgsql:close(Conn)

@@ -19,10 +19,11 @@
     },
     MigrationOpts :: proplists:proplist(),
     MigrationsDir :: file:filename()
-) -> {ok, [binary()]} | {error, term()}.
+) -> {ok, [binary()]} | {error, term()} | no_return().
 perform(Realm, #{database := DbName} = DbOpts, MigrationOpts, MigrationsDir) ->
     {ok, AllMigrations} = epg_migrator_scanner:scan(MigrationsDir),
     {ok, Conn} = connect(DbOpts),
+    ShouldReraise = proplists:get_value(reraise, MigrationOpts, false),
     Result = epgsql:with_transaction(
         Conn,
         fun(C) ->
@@ -31,7 +32,8 @@ perform(Realm, #{database := DbName} = DbOpts, MigrationOpts, MigrationsDir) ->
             {ok, ExecutedMigrations} = epg_migrator_storage:get_executed(C, Realm),
             PendingMigrations = epg_migrator_scanner:filter_pending(AllMigrations, ExecutedMigrations),
             execute_migrations(C, Realm, MigrationsDir, PendingMigrations, MigrationOpts)
-        end
+        end,
+        [{reraise, ShouldReraise}]
     ),
     ok = epgsql:close(Conn),
     case Result of

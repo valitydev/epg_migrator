@@ -45,8 +45,8 @@ all() ->
     ].
 
 init_per_suite(Config) ->
-    application:ensure_all_started(epgsql),
-    application:ensure_all_started(erlydtl),
+    {ok, _} = application:ensure_all_started(epgsql),
+    {ok, _} = application:ensure_all_started(erlydtl),
 
     DbOpts = #{
         host => "postgres",
@@ -177,7 +177,12 @@ test_mixed_migrations_creates_all_tables(Config) ->
 
         {ok, _, PostCols} = epgsql:equery(
             Conn,
-            "SELECT column_name FROM information_schema.columns WHERE table_name = 'app_posts' ORDER BY ordinal_position",
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'app_posts'
+            ORDER BY ordinal_position
+            """,
             []
         ),
         PostColumns = [Col || {Col} <- PostCols],
@@ -187,7 +192,12 @@ test_mixed_migrations_creates_all_tables(Config) ->
 
         {ok, _, CommentCols} = epgsql:equery(
             Conn,
-            "SELECT column_name FROM information_schema.columns WHERE table_name = 'app_comments' ORDER BY ordinal_position",
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'app_comments'
+            ORDER BY ordinal_position
+            """,
             []
         ),
         CommentColumns = [Col || {Col} <- CommentCols],
@@ -403,10 +413,10 @@ connect(DbOpts) ->
 cleanup_database(DbOpts) ->
     {ok, Conn} = connect(DbOpts),
     try
-        epgsql:squery(Conn, "DROP SCHEMA public CASCADE"),
-        epgsql:squery(Conn, "CREATE SCHEMA public"),
-        epgsql:squery(Conn, "GRANT ALL ON SCHEMA public TO migrator"),
-        epgsql:squery(Conn, "GRANT ALL ON SCHEMA public TO public"),
+        _ = epgsql:squery(Conn, "DROP SCHEMA public CASCADE"),
+        _ = epgsql:squery(Conn, "CREATE SCHEMA public"),
+        _ = epgsql:squery(Conn, "GRANT ALL ON SCHEMA public TO migrator"),
+        _ = epgsql:squery(Conn, "GRANT ALL ON SCHEMA public TO public"),
         ok
     after
         epgsql:close(Conn)

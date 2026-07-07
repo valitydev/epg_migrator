@@ -29,18 +29,17 @@ advisory_lock(Conn, DbName) ->
 
 -spec ensure_table(epgsql:connection()) -> ok | {error, term()}.
 ensure_table(Conn) ->
-    SQL =
-        "CREATE TABLE IF NOT EXISTS "
-        ?MIGRATIONS_TABLE
-        " ("
-        "realm VARCHAR(255) NOT NULL, "
-        "migration_file_name VARCHAR(255) NOT NULL, "
-        "executed_at TIMESTAMP NOT NULL DEFAULT NOW(), "
-        "PRIMARY KEY (realm, migration_file_name)"
-        ");"
-        "LOCK TABLE "
-        ?MIGRATIONS_TABLE
-        " IN ACCESS EXCLUSIVE MODE;",
+    SQL = io_lib:format(
+        """
+        CREATE TABLE IF NOT EXISTS ~s (
+          realm VARCHAR(255) NOT NULL,
+          migration_file_name VARCHAR(255) NOT NULL,
+          executed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+          PRIMARY KEY (realm, migration_file_name)
+        );
+        LOCK TABLE ~s IN ACCESS EXCLUSIVE MODE;
+        """, [?MIGRATIONS_TABLE, ?MIGRATIONS_TABLE]
+    ),
     case epgsql:squery(Conn, SQL) of
         {ok, _Columns, _Rows} ->
             ok;
